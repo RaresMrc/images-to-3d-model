@@ -1,0 +1,6 @@
+Django>=5.1.4
+celery
+redis
+Pillow
+opencv-python
+numpy

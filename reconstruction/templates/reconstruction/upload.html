@@ -1,0 +1,571 @@
+<!-- reconstruction/templates/reconstruction/upload.html -->
+<!DOCTYPE html>
+<html>
+<head>
+    <title>3D Model from Images</title>
+    <style>
+        .container {
+            max-width: 800px;
+            margin: 40px auto;
+            padding: 20px;
+            font-family: Arial, sans-serif;
+        }
+
+        .drop-zone {
+            width: 100%;
+            height: 300px;
+            border: 3px dashed #ccc;
+            border-radius: 10px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            transition: border-color 0.3s ease;
+        }
+
+        .drop-zone.dragover {
+            border-color: #4CAF50;
+            background-color: rgba(76, 175, 80, 0.1);
+        }
+
+        .preview-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .preview-image {
+            width: 100%;
+            height: 150px;
+            object-fit: cover;
+            border-radius: 5px;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 20px;
+            background-color: #f0f0f0;
+            border-radius: 10px;
+            margin-top: 20px;
+            display: none;
+        }
+
+        .progress-bar-fill {
+            height: 100%;
+            background-color: #4CAF50;
+            border-radius: 10px;
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
+        button {
+            padding: 10px 20px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 20px;
+            display: none;
+        }
+
+        button:hover {
+            background-color: #45a049;
+        }
+
+        .error-message {
+            color: #f44336;
+            margin-top: 10px;
+            display: none;
+        }
+
+        .download-container {
+            margin-top: 20px;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .download-button {
+            padding: 10px 20px;
+            background-color: #2196F3;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            display: inline-block;
+        }
+
+        .download-button:hover {
+            background-color: #1976D2;
+        }
+
+        .preview-wrapper {
+            position: relative;
+            display: inline-block;
+        }
+
+        .remove-image-btn {
+            position: absolute;
+            top: -10px;
+            right: -10px;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background-color: #ff4444;
+            color: white;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            padding: 0;
+            line-height: 1;
+        }
+
+        .remove-image-btn:hover {
+            background-color: #cc0000;
+        }
+
+        .reset-button {
+            margin-top: 10px;
+            padding: 8px 16px;
+            background-color: #ff4444;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .reset-button:hover {
+            background-color: #cc0000;
+        }
+
+        .photo-guidance {
+            background-color: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 30px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .photo-guidance h2 {
+            color: #2c3e50;
+            margin-bottom: 20px;
+            text-align: center;
+            font-size: 1.5em;
+        }
+
+        .guidance-content {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+        }
+
+        .guidance-section {
+            background-color: white;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        .guidance-section h3 {
+            color: #3498db;
+            margin-bottom: 15px;
+            font-size: 1.2em;
+        }
+
+        .guidance-section ul {
+            list-style-type: none;
+            padding: 0;
+        }
+
+        .guidance-section li {
+            margin-bottom: 10px;
+            padding-left: 20px;
+            position: relative;
+            line-height: 1.4;
+        }
+
+        .guidance-section li:before {
+            content: '•';
+            color: #3498db;
+            position: absolute;
+            left: 0;
+        }
+
+        @media (max-width: 768px) {
+            .guidance-content {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+{% csrf_token %}
+<div class="container">
+    <div class="photo-guidance">
+        <h2>How to Take Photos for Best Results</h2>
+        <div class="guidance-content">
+            <div class="guidance-section">
+                <h3>Photo Requirements</h3>
+                <ul>
+                    <li>Take 20-40 photos for best results</li>
+                    <li>Move around the object in a circle</li>
+                    <li>Keep a consistent distance from the object</li>
+                    <li>Ensure each photo overlaps by about 60-70% with adjacent photos</li>
+                </ul>
+            </div>
+            <div class="guidance-section">
+                <h3>Lighting & Environment</h3>
+                <ul>
+                    <li>Use diffuse, even lighting - avoid harsh shadows</li>
+                    <li>Avoid reflective or transparent surfaces</li>
+                    <li>Ensure the object is well-lit from all angles</li>
+                    <li>Keep the background as simple as possible</li>
+                </ul>
+            </div>
+            <div class="guidance-section">
+                <h3>Camera Settings</h3>
+                <ul>
+                    <li>Keep the camera settings consistent between shots</li>
+                    <li>Ensure images are in focus</li>
+                    <li>Avoid using flash if possible</li>
+                    <li>Hold the camera steady to avoid blur</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+    <div class="drop-zone" id="dropZone">
+        <p>Drag and drop images here or click to select files</p>
+        <p style="font-size: 0.8em; color: #666;">Supported formats: JPG, PNG</p>
+        <input type="file" id="fileInput" multiple accept="image/*" style="display: none;">
+    </div>
+
+    <div class="error-message" id="errorMessage"></div>
+    <div class="preview-container" id="previewContainer"></div>
+    <div class="progress-bar" id="progressBar">
+        <div class="progress-bar-fill" id="progressBarFill"></div>
+    </div>
+    <button id="uploadButton">Start 3D Reconstruction</button>
+    <button id="resetButton" class="reset-button" onclick="resetSelection()">Reset Selection</button>
+</div>
+
+<script>
+    const dropZone = document.getElementById('dropZone');
+    const fileInput = document.getElementById('fileInput');
+    const previewContainer = document.getElementById('previewContainer');
+    const uploadButton = document.getElementById('uploadButton');
+    const progressBar = document.getElementById('progressBar');
+    const progressBarFill = document.getElementById('progressBarFill');
+    const errorMessage = document.getElementById('errorMessage');
+
+    let selectedFiles = [];
+
+    const MAX_FILES = 200;
+    const MAX_FILE_SIZE = 40;
+
+    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+        dropZone.addEventListener(eventName, preventDefaults, false);
+        document.body.addEventListener(eventName, preventDefaults, false);
+    });
+
+    function preventDefaults(e) {
+        e.preventDefault();
+        e.stopPropagation();
+    }
+
+    ['dragenter', 'dragover'].forEach(eventName => {
+        dropZone.addEventListener(eventName, highlight, false);
+    });
+
+    ['dragleave', 'drop'].forEach(eventName => {
+        dropZone.addEventListener(eventName, unhighlight, false);
+    });
+
+    function highlight(e) {
+        dropZone.classList.add('dragover');
+    }
+
+    function unhighlight(e) {
+        dropZone.classList.remove('dragover');
+    }
+
+    dropZone.addEventListener('drop', handleDrop, false);
+    dropZone.addEventListener('click', () => fileInput.click());
+    fileInput.addEventListener('change', handleFiles);
+
+    function handleDrop(e) {
+        const dt = e.dataTransfer;
+        const files = dt.files;
+        handleFiles({target: {files: files}});
+    }
+
+    function handleFiles(e) {
+        const newFiles = Array.from(e.target.files);
+
+        const validationError = validateFiles(newFiles);
+        if (validationError) {
+            showError(validationError);
+            return;
+        }
+
+        selectedFiles = [...selectedFiles, ...newFiles];
+
+        hideError();
+
+        updatePreview();
+
+        uploadButton.style.display = selectedFiles.length > 0 ? 'block' : 'none';
+    }
+
+    function validateFiles(files) {
+        if (selectedFiles.length + files.length > MAX_FILES) {
+            return `Maximum ${MAX_FILES} files allowed`;
+        }
+
+        for (const file of files) {
+            if (!file.type.startsWith('image/')) {
+                return 'Only image files are allowed';
+            }
+            if (file.size > MAX_FILE_SIZE * 1024 * 1024) {
+                return `Files must be smaller than ${MAX_FILE_SIZE}MB`;
+            }
+        }
+
+        return null;
+    }
+
+    function showError(message) {
+        errorMessage.textContent = message;
+        errorMessage.style.display = 'block';
+    }
+
+    function hideError() {
+        errorMessage.style.display = 'none';
+    }
+
+    function updatePreview() {
+        previewContainer.innerHTML = '';
+        selectedFiles.forEach((file, index) => {
+            const previewWrapper = document.createElement('div');
+            previewWrapper.className = 'preview-wrapper';
+
+            const img = document.createElement('img');
+            img.className = 'preview-image';
+            img.title = file.name;
+
+            const removeBtn = document.createElement('button');
+            removeBtn.className = 'remove-image-btn';
+            removeBtn.innerHTML = '×';
+            removeBtn.onclick = (e) => {
+                e.preventDefault();
+                removeImage(index);
+            };
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+
+            previewWrapper.appendChild(img);
+            previewWrapper.appendChild(removeBtn);
+            previewContainer.appendChild(previewWrapper);
+        });
+    }
+
+    uploadButton.addEventListener('click', uploadFiles);
+
+    async function checkJobStatus(jobId) {
+        try {
+            const response = await fetch(`/job-status/${jobId}/`);
+            const data = await response.json();
+            if (data.status === 'completed') {
+                showDownloadButtons(jobId);
+                return true;
+            } else if (data.status === 'failed') {
+                showError('Reconstruction failed: ' + data.message);
+                return true;
+            }
+            return false;
+        } catch (error) {
+            console.error('Error checking job status:', error);
+            return false;
+        }
+    }
+
+    function startProcessing() {
+        dropZone.style.pointerEvents = 'none';
+        dropZone.style.opacity = '0.6';
+
+        document.querySelectorAll('.remove-image-btn').forEach(btn => {
+            btn.disabled = true;
+            btn.style.opacity = '0.5';
+        });
+
+        document.getElementById('resetButton').disabled = true;
+    }
+
+    function endProcessing() {
+        dropZone.style.pointerEvents = 'auto';
+        dropZone.style.opacity = '1';
+
+        document.querySelectorAll('.remove-image-btn').forEach(btn => {
+            btn.disabled = false;
+            btn.style.opacity = '1';
+        });
+
+        document.getElementById('resetButton').disabled = false;
+    }
+
+    async function uploadFiles() {
+        if (selectedFiles.length === 0) return;
+
+        startProcessing();
+
+        const formData = new FormData();
+        selectedFiles.forEach(file => {
+            formData.append('images', file);
+        });
+
+        progressBar.style.display = 'block';
+        updateProgress(0);
+        uploadButton.disabled = true;
+
+        try {
+            const response = await fetch('/', {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-CSRFToken': getCookie('csrftoken')
+                }
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const data = await response.json();
+            updateProgress(20);
+
+            const jobId = data.job_id;
+            let progress = 20;
+            const pollInterval = setInterval(async () => {
+                try {
+                    const statusResponse = await fetch(`/job-status/${jobId}/`);
+                    const statusData = await statusResponse.json();
+
+                    if (statusData.status === 'completed') {
+                        updateProgress(100);
+                        showDownloadButtons(jobId);
+                        clearInterval(pollInterval);
+                        endProcessing();
+                    } else if (statusData.status === 'failed') {
+                        showError('Reconstruction failed: ' + statusData.message);
+                        clearInterval(pollInterval);
+                        endProcessing();
+                    } else if (statusData.status === 'processing') {
+                        progress = Math.min(progress + 5, 90);
+                        updateProgress(progress);
+                    }
+                } catch (error) {
+                    console.error('Error checking status:', error);
+                    clearInterval(pollInterval);
+                    endProcessing();
+                }
+            }, 2000);
+
+        } catch (error) {
+            console.error('Error:', error);
+            showError('Upload failed. Please try again.');
+            endProcessing();
+        }
+    }
+
+    function resetGenerationState() {
+        uploadButton.disabled = false;
+        progressBar.style.display = 'none';
+        progressBarFill.style.width = '0%';
+    }
+
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+
+    function showDownloadButtons(jobId) {
+        let downloadContainer = document.getElementById('downloadContainer');
+        if (!downloadContainer) {
+            downloadContainer = document.createElement('div');
+            downloadContainer.id = 'downloadContainer';
+            downloadContainer.className = 'download-container';
+            document.querySelector('.container').appendChild(downloadContainer);
+        }
+
+        downloadContainer.innerHTML = '';
+
+        const fileTypes = [
+            {id: 'sparse', name: 'Sparse Point Cloud'},
+            {id: 'dense', name: 'Dense Point Cloud'},
+            {id: 'mesh', name: 'Textured Mesh'}
+        ];
+
+        fileTypes.forEach(type => {
+            const button = document.createElement('button');
+            button.className = 'download-button';
+            button.textContent = `Download ${type.name}`;
+            button.onclick = () => {
+                window.location.href = `/download/${jobId}/${type.id}/`;
+            };
+            downloadContainer.appendChild(button);
+        });
+
+        resetGenerationState();
+    }
+
+    function updateProgress(percentage) {
+        progressBarFill.style.transition = 'width 0.5s ease-in-out';
+        progressBarFill.style.width = `${percentage}%`;
+    }
+
+    function removeImage(index) {
+        selectedFiles = selectedFiles.filter((_, i) => i !== index);
+        updatePreview();
+
+        uploadButton.style.display = selectedFiles.length > 0 ? 'block' : 'none';
+    }
+
+    function resetSelection() {
+        selectedFiles = [];
+        updatePreview();
+        uploadButton.style.display = 'none';
+
+        fileInput.value = '';
+
+        hideError();
+
+        progressBar.style.display = 'none';
+        progressBarFill.style.width = '0%';
+
+        const downloadContainer = document.getElementById('downloadContainer');
+        if (downloadContainer) {
+            downloadContainer.innerHTML = '';
+        }
+    }
+</script>
+</body>
+</html>
