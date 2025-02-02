@@ -50,3 +50,37 @@ celery -A image_to_model worker -l info
 ```bash
 python3 manage.py runserver
 ```
+
+## Usage
+
+Navigate to http://localhost:8000
+Upload 20-40 images of your object
+Wait for the processing to complete
+Download the generated 3D models
+
+## Project Structure
+
+/reconstruction - Main Django app containing the reconstruction logic
+/templates - HTML templates
+/media - Storage for uploaded images and generated models
+
+## Technologies Used
+
+Django
+Celery
+Redis
+COLMAP
+JavaScript (for frontend)
+Tailwind CSS
+
+## Important Setup Note
+The Django settings.py file is not included in this repository for security reasons. To run this project, you can follow these steps:
+
+1. Create a new settings.py file based on Django's default configuration
+2. Configure the following settings:
+   - SECRET_KEY
+   - DEBUG
+   - ALLOWED_HOSTS
+   - MEDIA_URL and MEDIA_ROOT for handling uploaded images
+   - Celery configuration for processing tasks
+   - Redis settings for the task queue
